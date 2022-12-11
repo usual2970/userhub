@@ -8,7 +8,7 @@ Every time we want to do a hobby project or a startup develops a new project, we
 
 UserHub is such a project that allows you to focus on your business logic without having to consider the user center. UserHub provides user login, registration, user management, and other necessary functions for the user center. In addition to the built-in methods for login and registration, UserHub also supports users to extend their own functions.
 
-## 安装
+## Installation
 
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
 
