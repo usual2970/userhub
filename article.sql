@@ -134,3 +134,105 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2017-12-13 17:17:00
+
+drop TABLE IF EXISTS `article`.`user_code`;
+CREATE TABLE `article`.`user_code`
+(
+    `id`            bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `tel`           varchar(11) NOT NULL DEFAULT '' COMMENT '手机号',
+    `nation_code`   varchar(5)  NOT NULL DEFAULT '' COMMENT '国家代码',
+    `code`          varchar(6)  NOT NULL DEFAULT '' COMMENT '验证码',
+    `purpose`       tinyint(4) NOT NULL DEFAULT 0 COMMENT '用途1登录',
+    `state`         tinyint(1) NOT NULL DEFAULT 0 COMMENT '状态1已发送2已使用',
+    `created_at`    int(10) NOT NULL DEFAULT 0 COMMENT '创建时间',
+    `updated_at`    int(10) NOT NULL DEFAULT 0 COMMENT '更新时间',
+    `expired_at`    int(10) NOT NULL DEFAULT 0 COMMENT '过期时间',
+    `modified_time` datetime    NOT NULL ON UPDATE CURRENT_TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '方便查看，业务无关',
+    PRIMARY KEY (`id`),
+    INDEX           `idx_tel_code_nation_code` USING BTREE (`tel`, `nation_code`, `code`) comment ''
+) COMMENT='验证码';
+DROP TABLE IF EXISTS `article`.`user_account`;
+CREATE TABLE `article`.`user_account`
+(
+    `id`            bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `openid`        varchar(128) NOT NULL DEFAULT '' COMMENT 'openid',
+    `platform_id`   int          NOT NULL DEFAULT 0 COMMENT '平台id',
+    `user_id`       bigint(20) NOT NULL DEFAULT 0 COMMENT '用户id',
+    `created_at`    int(10) NOT NULL DEFAULT 0 COMMENT '创建时间',
+    `updated_at`    int(10) NOT NULL DEFAULT 0 COMMENT '更新时间',
+    `deleted_at`    int(10) NOT NULL DEFAULT 0 COMMENT '删除时间',
+    `modified_time` datetime     NOT NULL ON UPDATE CURRENT_TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '业务无关，方便查看',
+    PRIMARY KEY (`id`),
+    UNIQUE `uniq_openid_deleted_at` USING BTREE (`openid`, `deleted_at`) comment '',
+    KEY             `idx_user_id` (`user_id`) USING BTREE
+) COMMENT='账户表';
+DROP TABLE IF EXISTS `article`.`user_private_tel_info`;
+CREATE TABLE `article`.`user_private_tel_info`
+(
+    `id`            bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `tel_hash`      varchar(128) NOT NULL DEFAULT '' COMMENT 'tel hash',
+    `user_id`       bigint(20) NOT NULL DEFAULT 0 COMMENT '用户id',
+    `created_at`    int(10) NOT NULL DEFAULT 0 COMMENT '创建时间',
+    `deleted_at`    int(10) NOT NULL DEFAULT 0 COMMENT '更新时间',
+    `modified_time` datetime     NOT NULL ON UPDATE CURRENT_TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE `uniq_tel_hash` USING BTREE (`tel_hash`) comment ''
+) COMMENT='隐私信息手机表';
+DROP TABLE IF EXISTS `article`.`user_private_info`;
+CREATE TABLE `article`.`user_private_info`
+(
+    `user_id`        bigint(20) NOT NULL COMMENT 'userinfoId',
+    `name`           varchar(50)   NOT NULL DEFAULT '' COMMENT '真实姓名',
+    `tel`            varchar(50)   NOT NULL DEFAULT '' COMMENT '手机号码',
+    `tel_hash`       varchar(128)  NOT NULL DEFAULT '' COMMENT '电话hash',
+    `id_code`        varchar(50)   NOT NULL DEFAULT '' COMMENT '身份证号',
+    `real_info`      varchar(1000) NOT NULL DEFAULT '' COMMENT '真实信息JSON',
+    `id_code_hash`   varchar(128)  NOT NULL DEFAULT '' COMMENT '身份证号码hash',
+    `id_type`        varchar(10)   NOT NULL DEFAULT '' COMMENT '身份证类型',
+    `id_hold`        varchar(255)  NOT NULL DEFAULT '' COMMENT '手持',
+    `id_front`       varchar(255)  NOT NULL DEFAULT '' COMMENT '正面',
+    `id_back`        varchar(255)  NOT NULL DEFAULT '' COMMENT '背面',
+    `id_verified_at` int(11) NOT NULL DEFAULT '0' COMMENT '认证时间',
+    `id_expired_at`  int(11) NOT NULL DEFAULT '0' COMMENT '身份证过期时间,-1为永久',
+    `created_at`     int(11) NOT NULL DEFAULT '0' COMMENT '创建时间',
+    `updated_at`     int(11) NOT NULL DEFAULT '0' COMMENT '更新时间',
+    `modified_time`  timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户隐私信息表';
+drop TABLE if EXISTS `article`.`user_profile`;
+CREATE TABLE `article`.`user_profile`
+(
+    `user_id`          bigint(20) unsigned NOT NULL COMMENT '用户id',
+    `uri`              varchar(20)   NOT NULL DEFAULT '' COMMENT 'uri',
+    `headimgurl`       varchar(200)  NOT NULL DEFAULT '' COMMENT '头像',
+    `signature`        varchar(255)  NOT NULL DEFAULT '' COMMENT '个性签名',
+    `nickname`         varchar(50)   NOT NULL DEFAULT '' COMMENT '昵称',
+    `sex`              tinyint(1) NOT NULL DEFAULT '0' COMMENT '性别 0未知,1男,2女',
+    `region`           varchar(50)   NOT NULL DEFAULT '' COMMENT '地区',
+    `country`          varchar(50)   NOT NULL DEFAULT '' COMMENT '国家',
+    `province`         varchar(50)   NOT NULL DEFAULT '' COMMENT '省市',
+    `city`             varchar(50)   NOT NULL DEFAULT '' COMMENT '城市',
+    `lang`             varchar(20)   NOT NULL DEFAULT '' COMMENT '语言',
+    `preferences`      varchar(1024) NOT NULL DEFAULT '' COMMENT '偏好设置',
+    `forbidden_at`     int(11) NOT NULL DEFAULT '0' COMMENT '被封时间',
+    `forbidden_end_at` int(11) NOT NULL DEFAULT '0' COMMENT '被封结束时间,-1永久',
+    `created_at`       int(11) unsigned NOT NULL DEFAULT '0' COMMENT '创建时间',
+    `updated_at`       int(11) unsigned NOT NULL DEFAULT '0' COMMENT '更新时间',
+    `deleted_at`       int(11) unsigned NOT NULL DEFAULT '0' COMMENT '删除时间',
+    `modified_time`    timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`user_id`),
+    UNIQUE KEY `uniq_uri` (`uri`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户基本信息表';
+drop TABLE if exists `article`.`user_unionid`;
+CREATE TABLE `article`.`user_unionid`
+(
+    `id`            bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `user_id`       bigint(20) NOT NULL DEFAULT '0' COMMENT '用户唯一标识',
+    `unionid`       varchar(50) NOT NULL DEFAULT '' COMMENT '账户打通依据',
+    `data_type`     tinyint(4) NOT NULL DEFAULT '1' COMMENT '1 微信unionid,2 open_platform_unionid',
+    `created_at`    int(11) NOT NULL DEFAULT '0' COMMENT '创建时间戳',
+    `updated_at`    int(11) NOT NULL DEFAULT '0' COMMENT '更新时间戳',
+    `modified_time` timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uniq_unionid` (`unionid`) COMMENT 'unionid唯一索引'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='平台unionId表';
