@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/rs/xid"
-	"github.com/usual2970/userhub/domain/dto"
 )
 
 type Profile struct {
@@ -101,15 +100,15 @@ type IWechatRepository interface {
 
 type IProviceUsecase interface {
 	// SetHead 设置头像
-	SetHead(ctx context.Context, fh *multipart.FileHeader) (*dto.UserSetHeadResp, error)
+	SetHead(ctx context.Context, fh *multipart.FileHeader) (*UserSetHeadResp, error)
 	// SetNickname 设置昵称
 	SetNickname(ctx context.Context, nickname string) error
 	// SetSex 设置性别
 	SetSex(ctx context.Context, sex int) error
 	// SetCity 设置城市
-	SetCity(ctx context.Context, req *dto.UserSetCityReq) error
+	SetCity(ctx context.Context, req *UserSetCityReq) error
 	// Profile 获取用户基本信息
-	Profile(ctx context.Context) (*dto.UserProfileResp, error)
+	Profile(ctx context.Context) (*UserProfileResp, error)
 	// SetSignature 设置签名
 	SetSignature(ctx context.Context, signature string) error
 	// SetHeight 设置身高

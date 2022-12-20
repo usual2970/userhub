@@ -3,14 +3,16 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"net/url"
+	"path/filepath"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/labstack/echo"
 	"github.com/spf13/viper"
 
+	"github.com/usual2970/gopkg/conf"
+	"github.com/usual2970/gopkg/log"
 	_articleHttpDelivery "github.com/usual2970/userhub/article/delivery/http"
 	_articleHttpDeliveryMiddleware "github.com/usual2970/userhub/article/delivery/http/middleware"
 	_articleRepo "github.com/usual2970/userhub/article/repository/mysql"
@@ -19,16 +21,17 @@ import (
 )
 
 func init() {
-	viper.AddConfigPath("..")
-
-	err := viper.ReadInConfig()
+	// 日志
+	log.Setup()
+	// 配置
+	absPath, err := filepath.Abs("..")
 	if err != nil {
 		panic(err)
 	}
-
-	if viper.GetBool(`debug`) {
-		log.Println("Service RUN on DEBUG mode")
+	if err := conf.Setup(conf.WithPath(absPath)); err != nil {
+		panic(err)
 	}
+
 }
 
 func main() {
@@ -45,17 +48,20 @@ func main() {
 	dbConn, err := sql.Open(`mysql`, dsn)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		return
 	}
 	err = dbConn.Ping()
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		return
 	}
 
 	defer func() {
 		err := dbConn.Close()
 		if err != nil {
-			log.Fatal(err)
+			log.Error(err)
+			return
 		}
 	}()
 
@@ -69,5 +75,5 @@ func main() {
 	au := _articleUcase.NewArticleUsecase(ar, authorRepo, timeoutContext)
 	_articleHttpDelivery.NewArticleHandler(e, au)
 
-	log.Fatal(e.Start(viper.GetString("server.address"))) //nolint
+	log.Error(e.Start(viper.GetString("server.address"))) //nolint
 }

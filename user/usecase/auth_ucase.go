@@ -1,0 +1,111 @@
+package usecase
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/usual2970/gopkg/conf"
+	"github.com/usual2970/gopkg/log"
+	"github.com/usual2970/userhub/domain"
+	"github.com/usual2970/userhub/domain/constant"
+	"github.com/usual2970/userhub/user/usecase/auth"
+)
+
+const AuthExpireDuration = time.Hour * 24 * 7
+
+var ErrAuthNotExist = errors.New("auth not found")
+
+type IAuth interface {
+	CheckParam(ctx context.Context, param map[string]string) error
+	Login(ctx context.Context, param map[string]string) (*domain.Account, error)
+}
+
+type AuthUsecase struct {
+	codeRepo    domain.ICodeRepository
+	accountRepo domain.IAccountRepository
+	pTelRepo    domain.IPrivateTelInfoRepository
+	atRepo      domain.IAccessTokenRepository
+}
+
+func NewAuthUsecase(codeRepo domain.ICodeRepository, accountRepo domain.IAccountRepository,
+	pTelRepo domain.IPrivateTelInfoRepository, atRepo domain.IAccessTokenRepository) domain.IAuthUsecase {
+	return &AuthUsecase{
+		codeRepo:    codeRepo,
+		accountRepo: accountRepo,
+		pTelRepo:    pTelRepo,
+		atRepo:      atRepo,
+	}
+}
+
+func (a *AuthUsecase) getAuth(platformId int) (IAuth, error) {
+	switch platformId {
+	case constant.PlatformSmsCode:
+		return auth.NewCodeAuth(a.codeRepo, a.accountRepo, a.pTelRepo), nil
+	default:
+		return nil, ErrAuthNotExist
+	}
+}
+
+// Login 登录
+func (a *AuthUsecase) Login(ctx context.Context, param *domain.AuthLoginReq) (*domain.AuthLoginResp, error) {
+	l := log.WithField("module", "login").WithField("param", param)
+
+	l.Info("login start")
+	// 获取登录对象
+	auth, err := a.getAuth(param.PlatformId)
+	if err != nil {
+		l.Error("get auth failed:", err)
+		return nil, err
+	}
+	// 验证参数
+	if err := auth.CheckParam(ctx, param.Data); err != nil {
+		l.Error("check param failed:", err)
+		return nil, err
+	}
+
+	// 登录流程
+	account, err := auth.Login(ctx, param.Data)
+	if err != nil {
+		l.Error("login failed:", err)
+		return nil, err
+	}
+	// 生成jwt
+	expiresAt := time.Now().Add(AuthExpireDuration)
+	claims := &jwt.RegisteredClaims{
+		ID:        fmt.Sprintf("%d", account.UserId),
+		ExpiresAt: jwt.NewNumericDate(expiresAt),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	key := conf.GetString("auth.key")
+	if key == "" {
+		l.Error("get auth key failed:")
+		return nil, err
+	}
+	accessToken, err := token.SignedString([]byte(key))
+	if err != nil {
+		return nil, err
+	}
+	rs := &domain.AuthLoginResp{
+		AccessToken: accessToken,
+		ExpiresAt:   expiresAt.Unix(),
+	}
+	err = a.atRepo.SetAccessToken(ctx, accessToken, account.UserId)
+	if err != nil {
+		l.Error("save accesstoken failed:", err)
+		return nil, err
+	}
+	return rs, nil
+}
+
+// SmsCode 发送短信验证码
+func (a *AuthUsecase) SmsCode(ctx context.Context, param *domain.AuthSmsCodeReq) error {
+	return nil
+}
+
+// Logout 登出
+func (a *AuthUsecase) Logout(ctx context.Context) error {
+	return nil
+}

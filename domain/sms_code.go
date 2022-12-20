@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"jiqi/internal/common/code"
+	"github.com/usual2970/userhub/internal/code"
 )
 
 const expireDuration = time.Minute * 5

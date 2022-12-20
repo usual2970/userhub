@@ -3,8 +3,6 @@ package domain
 import (
 	"context"
 	"time"
-
-	"github.com/usual2970/userhub/domain/dto"
 )
 
 type Account struct {
@@ -51,20 +49,20 @@ type IAccountRepository interface {
 
 type IAccountUsecase interface {
 	// Info 账户信息手机号、微信
-	Info(ctx context.Context) (*dto.AccountInfoResp, error)
+	Info(ctx context.Context) (*AccountInfoResp, error)
 	// BindTelCode 绑定手机号验证码
-	BindTelCode(ctx context.Context, param *dto.AccountBindTelCodeReq) error
+	BindTelCode(ctx context.Context, param *AccountBindTelCodeReq) error
 	// BindTel 绑定手机号
-	BindTel(ctx context.Context, param *dto.AccountBindTelReq) error
+	BindTel(ctx context.Context, param *AccountBindTelReq) error
 	// BindWechat 绑定微信
-	BindWechat(ctx context.Context, param *dto.AccountBindWechatReq) error
+	BindWechat(ctx context.Context, param *AccountBindWechatReq) error
 }
 
 type IAuthUsecase interface {
 	// Login 登录
-	Login(ctx context.Context, param *dto.AuthLoginReq) (*dto.AuthLoginResp, error)
+	Login(ctx context.Context, param *AuthLoginReq) (*AuthLoginResp, error)
 	// SmsCode 发送短信验证码
-	SmsCode(ctx context.Context, param *dto.AuthSmsCodeReq) error
+	SmsCode(ctx context.Context, param *AuthSmsCodeReq) error
 	// Logout 登出
 	Logout(ctx context.Context) error
 }
