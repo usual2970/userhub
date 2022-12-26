@@ -6,3 +6,5 @@ const (
 	PlatformOneClick
 	PlatformWechatApp
 )
+
+const NotExistData = "-1"

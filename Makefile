@@ -28,7 +28,7 @@ deps:
 	@echo "Required Tools Are Available"
 
 dev-env: ## Bootstrap Environment (with a Docker-Compose help).
-	@ docker-compose up -d --build mysql
+	@ docker-compose up -d --build mysql redis
 
 dev-env-test: dev-env ## Run application (within a Docker-Compose help)
 	@ $(MAKE) image-build
