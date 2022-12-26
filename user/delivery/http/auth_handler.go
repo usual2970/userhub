@@ -15,9 +15,9 @@ func NewAuthHandler(e *echo.Echo, aUsercase domain.IAuthUsecase) {
 		AUsercase: aUsercase,
 	}
 	g := e.Group("/user/v1/")
-	g.POST("/auth/login", handler.Login)
-	g.POST("/auth/sms-code", handler.SmsCode)
-	g.POST("/auth/logout", handler.Logout)
+	g.POST("auth/login", handler.Login)
+	g.POST("auth/sms-code", handler.SmsCode)
+	g.POST("auth/logout", handler.Logout)
 }
 
 func (a *AuthHandler) Login(ctx echo.Context) error {

@@ -17,6 +17,7 @@ import (
 const AuthExpireDuration = time.Hour * 24 * 7
 
 var ErrAuthNotExist = errors.New("auth not found")
+var ErrCodeHasSend = errors.New("code has send")
 
 type IAuth interface {
 	CheckParam(ctx context.Context, param map[string]string) error
@@ -102,6 +103,26 @@ func (a *AuthUsecase) Login(ctx context.Context, param *domain.AuthLoginReq) (*d
 
 // SmsCode 发送短信验证码
 func (a *AuthUsecase) SmsCode(ctx context.Context, param *domain.AuthSmsCodeReq) error {
+
+	l := log.WithField("module", "sms code").WithField("param", param)
+	if param.NationCode == "" {
+		param.NationCode = domain.DefaultNationCode
+	}
+	// 先查询有没有code
+	if c, err := a.codeRepo.GetByTel(ctx, param.Tel, param.NationCode, domain.CodePurposeLogin); err != nil && !errors.Is(err, domain.ErrNotFound) {
+		return errors.New("send sms code failed:" + err.Error())
+	} else if err == nil && !c.IsUsed() {
+		return ErrCodeHasSend
+	}
+	// 没有的话再发送
+	code := domain.NewSmsCode(param.Tel, param.NationCode, domain.CodePurposeLogin)
+	err := a.codeRepo.Save(ctx, code)
+	if err != nil {
+		l.Error("send sms code failed: ", err)
+		return errors.New("send sms code failed:" + err.Error())
+	}
+
+	// 发送短信
 	return nil
 }
 
