@@ -83,7 +83,7 @@ func (a *AuthUsecase) Login(ctx context.Context, param *domain.AuthLoginReq) (*d
 	key := conf.GetString("auth.key")
 	if key == "" {
 		l.Error("get auth key failed:")
-		return nil, err
+		return nil, errors.New("get auth key failed")
 	}
 	accessToken, err := token.SignedString([]byte(key))
 	if err != nil {

@@ -12,6 +12,9 @@
       "user": "user",
       "pass": "password",
       "name": "article"
+  },
+  "auth":{
+    "key": "kGAwktAwxGlWxGYF0buckG15kG1F0t1F"
   }
 
 }

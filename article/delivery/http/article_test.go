@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/bxcodec/faker"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
