@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/usual2970/gopkg/conf"
+	pkgJwt "github.com/usual2970/gopkg/jwt"
 	"github.com/usual2970/gopkg/log"
 	"github.com/usual2970/userhub/domain"
 	"github.com/usual2970/userhub/domain/constant"
@@ -128,5 +129,11 @@ func (a *AuthUsecase) SmsCode(ctx context.Context, param *domain.AuthSmsCodeReq)
 
 // Logout 登出
 func (a *AuthUsecase) Logout(ctx context.Context) error {
-	return nil
+
+	token, err := pkgJwt.GetAccessToken(ctx)
+	if err != nil {
+		return err
+	}
+
+	return a.atRepo.DelAccessToken(ctx, token)
 }

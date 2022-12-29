@@ -25,7 +25,7 @@ func NewAuthHandler(e *echo.Echo, aUsercase domain.IAuthUsecase) {
 		log.Info(userID, err)
 		return http.Resp(c, nil)
 	}, middleware.NeedLogin())
-	g.POST("auth/logout", handler.Logout)
+	g.POST("auth/logout", handler.Logout, middleware.NeedLogin())
 }
 
 func (a *AuthHandler) Login(ctx echo.Context) error {

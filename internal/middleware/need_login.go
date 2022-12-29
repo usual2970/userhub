@@ -46,7 +46,7 @@ func NeedLogin() echo.MiddlewareFunc {
 				return nil, errors.New("invalid token")
 			}
 
-			ctx := pkgJwt.WithContext(c.Request().Context(), token.Claims)
+			ctx := pkgJwt.WithContext(c.Request().Context(), token)
 
 			c.SetRequest(c.Request().Clone(ctx))
 			return token, nil
