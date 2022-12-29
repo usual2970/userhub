@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	_ "github.com/go-sql-driver/mysql"
@@ -15,7 +16,6 @@ import (
 	"github.com/usual2970/gopkg/conf"
 	"github.com/usual2970/gopkg/container"
 	"github.com/usual2970/gopkg/log"
-	_articleHttpDeliveryMiddleware "github.com/usual2970/userhub/article/delivery/http/middleware"
 	"github.com/usual2970/userhub/domain"
 
 	userRepo "github.com/usual2970/userhub/user/repository"
@@ -127,10 +127,14 @@ func registerDb() (*gorm.DB, error) {
 
 func registerRedis() (*redis.Client, error) {
 
+	password := conf.GetString("redis.password")
+	db := conf.GetInt("redis.db")
+
+	addr := fmt.Sprintf("%s:%s", conf.GetString("redis.host"), conf.GetString("redis.port"))
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:     addr,
+		Password: password, // no password set
+		DB:       db,       // use default DB
 	})
 
 	return rdb, nil
@@ -151,8 +155,14 @@ func registerCommon() error {
 	// provde echo
 	if err := container.Provide(func() *echo.Echo {
 		e := echo.New()
-		middL := _articleHttpDeliveryMiddleware.InitMiddleware()
-		e.Use(middL.CORS)
+		e.Use(middleware.CORS())
+
+		timeout := conf.GetInt("context.timeout")
+
+		e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+			Skipper: middleware.DefaultSkipper,
+			Timeout: time.Duration(timeout) * time.Second,
+		}))
 
 		e.Use(middleware.Logger())
 		return e
