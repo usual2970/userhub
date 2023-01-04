@@ -23,20 +23,6 @@ import (
 	userUsecase "github.com/usual2970/userhub/user/usecase"
 )
 
-func init() {
-	// 日志
-	log.Setup()
-	// 配置
-	absPath, err := filepath.Abs("..")
-	if err != nil {
-		panic(err)
-	}
-	if err := conf.Setup(conf.WithPath(absPath)); err != nil {
-		panic(err)
-	}
-
-}
-
 func main() {
 
 	// database
@@ -117,6 +103,16 @@ func registerUser() error {
 }
 
 func registerCommon() error {
+	// 日志
+	log.Setup()
+	// 配置
+	absPath, err := filepath.Abs("..")
+	if err != nil {
+		return err
+	}
+	if err := conf.Setup(conf.WithPath(absPath)); err != nil {
+		return err
+	}
 
 	// provde echo
 	if err := container.Provide(func() *echo.Echo {
