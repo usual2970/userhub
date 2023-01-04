@@ -11,7 +11,9 @@
       "port": "3306",
       "user": "user",
       "pass": "password",
-      "name": "article"
+      "name": "article",
+      "max_idle_conns":10,
+      "max_open_conns":100
   },
   "auth":{
     "key": "kGAwktAwxGlWxGYF0buckG15kG1F0t1F"
@@ -20,7 +22,8 @@
     "host": "localhost",
     "port": "6379",
     "db": 0,
-    "password": ""
+    "password": "",
+    "pool_size":10
   }
 
 }

@@ -6,38 +6,39 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	goRedis "github.com/go-redis/redis/v8"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/usual2970/gopkg/gorm"
+	"github.com/usual2970/gopkg/redis"
 	"github.com/usual2970/gopkg/sql"
 	"github.com/usual2970/userhub/domain"
 	"github.com/usual2970/userhub/domain/constant"
-	"gorm.io/gorm"
+	goGorm "gorm.io/gorm"
 )
 
 const sqAccountPrefix = "sq:account:%s"
 const sqAccountsPrefix = "sq:accounts:%d"
 
 type AccountRepository struct {
-	db *gorm.DB
-	rc *redis.Client
 }
 
-func NewAccountRepository(db *gorm.DB, rc *redis.Client) domain.IAccountRepository {
-	return &AccountRepository{
-		db: db,
-		rc: rc,
-	}
+func NewAccountRepository() domain.IAccountRepository {
+	return &AccountRepository{}
 }
 
 func (ar *AccountRepository) GetOneByOpenid(ctx context.Context, openid string) (*domain.Account, error) {
+	rc, err := redis.GetRedis()
+	if err != nil {
+		return nil, err
+	}
 	key := ar.getAccountKey(openid)
-	str, err := ar.rc.Get(ctx, key).Result()
-	if err != nil && !errors.Is(err, redis.Nil) {
+	str, err := rc.Get(ctx, key).Result()
+	if err != nil && !errors.Is(err, goRedis.Nil) {
 		return nil, err
 	}
 
 	if str == constant.NotExistData {
-		return nil, gorm.ErrRecordNotFound
+		return nil, goGorm.ErrRecordNotFound
 	}
 
 	rs := &domain.Account{}
@@ -48,15 +49,17 @@ func (ar *AccountRepository) GetOneByOpenid(ctx context.Context, openid string) 
 		return rs, nil
 	}
 
-	if err := ar.db.Where("openid=? and deleted_at=0", openid).First(rs).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
+	db, err := gorm.GetDB()
+
+	if err := db.Where("openid=? and deleted_at=0", openid).First(rs).Error; err != nil {
+		if !errors.Is(err, goGorm.ErrRecordNotFound) {
 			return nil, err
 		}
-		ar.rc.Set(ctx, key, constant.NotExistData, time.Hour*48)
+		rc.Set(ctx, key, constant.NotExistData, time.Hour*48)
 		return nil, err
 	}
 	data, _ := jsoniter.MarshalToString(rs)
-	ar.rc.Set(ctx, key, data, time.Hour*48)
+	rc.Set(ctx, key, data, time.Hour*48)
 	return rs, nil
 }
 
@@ -68,7 +71,11 @@ func (ar *AccountRepository) Save(
 	profile *domain.Profile,
 	update func(account *domain.Account),
 ) error {
-	tx := ar.db.Begin()
+	db, dberr := gorm.GetDB()
+	if dberr != nil {
+		return dberr
+	}
+	tx := db.Begin()
 	var err error
 	defer func() {
 		err = sql.FinishTransaction(err, tx)
@@ -116,7 +123,11 @@ func (ar *AccountRepository) Save(
 }
 
 func (ar *AccountRepository) SaveWechat(ctx context.Context, account *domain.Account, profile *domain.Profile, unionid *domain.Unionid, update func(account *domain.Account)) error {
-	tx := ar.db.Begin()
+	db, dberr := gorm.GetDB()
+	if dberr != nil {
+		return dberr
+	}
+	tx := db.Begin()
 	var err error
 	defer func() {
 		err = sql.FinishTransaction(err, tx)
@@ -157,14 +168,22 @@ func (ar *AccountRepository) SaveWechat(ctx context.Context, account *domain.Acc
 }
 
 func (ar *AccountRepository) DeleteFromCache(ctx context.Context, openid string) error {
+	rc, err := redis.GetRedis()
+	if err != nil {
+		return err
+	}
 	key := ar.getAccountKey(openid)
-	return ar.rc.Del(ctx, key).Err()
+	return rc.Del(ctx, key).Err()
 }
 
 func (ar *AccountRepository) GetByUserID(ctx context.Context, userId int) ([]domain.Account, error) {
+	rc, err := redis.GetRedis()
+	if err != nil {
+		return nil, err
+	}
 	key := ar.getAccountsKey(userId)
-	str, err := ar.rc.Get(ctx, key).Result()
-	if err != nil && !errors.Is(err, redis.Nil) {
+	str, err := rc.Get(ctx, key).Result()
+	if err != nil && !errors.Is(err, goRedis.Nil) {
 		return nil, err
 	}
 
@@ -176,17 +195,26 @@ func (ar *AccountRepository) GetByUserID(ctx context.Context, userId int) ([]dom
 		return rs, nil
 	}
 
-	if err := ar.db.Where("user_id=? and deleted_at=0", userId).Find(&rs).Error; err != nil {
+	db, dberr := gorm.GetDB()
+	if dberr != nil {
+		return nil, dberr
+	}
+
+	if err := db.Where("user_id=? and deleted_at=0", userId).Find(&rs).Error; err != nil {
 		return nil, err
 	}
 	data, _ := jsoniter.MarshalToString(rs)
-	ar.rc.Set(ctx, key, data, time.Hour*48)
+	rc.Set(ctx, key, data, time.Hour*48)
 
 	return rs, nil
 }
 func (ar *AccountRepository) DelByUserIdFromCache(ctx context.Context, userId int) error {
+	rc, err := redis.GetRedis()
+	if err != nil {
+		return err
+	}
 	key := ar.getAccountsKey(userId)
-	return ar.rc.Del(ctx, key).Err()
+	return rc.Del(ctx, key).Err()
 }
 
 func (ar *AccountRepository) getAccountKey(openid string) string {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/usual2970/gopkg/redis"
 	"github.com/usual2970/userhub/domain"
 	"github.com/usual2970/userhub/domain/constant"
 )
@@ -13,18 +13,19 @@ import (
 const sqAccessTokenPre = "sq:access:token:%s"
 
 type AccessTokenRepository struct {
-	rc *redis.Client
 }
 
-func NewAccessTokenRepository(rc *redis.Client) domain.IAccessTokenRepository {
-	return &AccessTokenRepository{
-		rc: rc,
-	}
+func NewAccessTokenRepository() domain.IAccessTokenRepository {
+	return &AccessTokenRepository{}
 }
 
 func (atRepo *AccessTokenRepository) GetAccessToken(ctx context.Context, token string) (int, error) {
+	rc, err := redis.GetRedis()
+	if err != nil {
+		return 0, err
+	}
 	key := atRepo.getKey(token)
-	str, err := atRepo.rc.Get(ctx, key).Result()
+	str, err := rc.Get(ctx, key).Result()
 	if err != nil {
 		return 0, err
 	}
@@ -32,13 +33,21 @@ func (atRepo *AccessTokenRepository) GetAccessToken(ctx context.Context, token s
 	return strconv.Atoi(str)
 }
 func (atRepo *AccessTokenRepository) SetAccessToken(ctx context.Context, token string, id int) error {
+	rc, err := redis.GetRedis()
+	if err != nil {
+		return err
+	}
 	key := atRepo.getKey(token)
-	return atRepo.rc.Set(ctx, key, id, constant.AuthExpireDuration).Err()
+	return rc.Set(ctx, key, id, constant.AuthExpireDuration).Err()
 }
 
 func (atRepo *AccessTokenRepository) DelAccessToken(ctx context.Context, token string) error {
+	rc, err := redis.GetRedis()
+	if err != nil {
+		return err
+	}
 	key := atRepo.getKey(token)
-	return atRepo.rc.Del(ctx, key).Err()
+	return rc.Del(ctx, key).Err()
 }
 
 func (atRepo *AccessTokenRepository) getKey(token string) string {

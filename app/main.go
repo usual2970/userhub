@@ -5,17 +5,16 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/spf13/viper"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 
 	"github.com/usual2970/gopkg/conf"
 	"github.com/usual2970/gopkg/container"
+	"github.com/usual2970/gopkg/gorm"
 	"github.com/usual2970/gopkg/log"
+	"github.com/usual2970/gopkg/redis"
 	"github.com/usual2970/userhub/domain"
 
 	userRepo "github.com/usual2970/userhub/user/repository"
@@ -52,14 +51,22 @@ func main() {
 	}
 
 	var e *echo.Echo
-	var db *gorm.DB
-	var red *redis.Client
 
-	if err := container.Invoke(func(echo *echo.Echo, gorm *gorm.DB, redis *redis.Client) {
+	if err := container.Invoke(func(echo *echo.Echo) {
 		e = echo
-		db = gorm
-		red = redis
 	}); err != nil {
+		log.Error(err)
+		return
+	}
+
+	db, err := gorm.GetDB()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	red, err := redis.GetRedis()
+	if err != nil {
 		log.Error(err)
 		return
 	}
@@ -109,48 +116,7 @@ func registerUser() error {
 	return nil
 }
 
-func registerDb() (*gorm.DB, error) {
-
-	dbHost := conf.GetString(`database.host`)
-	dbPort := conf.GetString(`database.port`)
-	dbUser := conf.GetString(`database.user`)
-	dbPass := conf.GetString(`database.pass`)
-	dbName := conf.GetString(`database.name`)
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", dbUser, dbPass, dbHost, dbPort, dbName)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-	if err != nil {
-		return nil, err
-	}
-
-	return db, nil
-}
-
-func registerRedis() (*redis.Client, error) {
-
-	password := conf.GetString("redis.password")
-	db := conf.GetInt("redis.db")
-
-	addr := fmt.Sprintf("%s:%s", conf.GetString("redis.host"), conf.GetString("redis.port"))
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: password, // no password set
-		DB:       db,       // use default DB
-	})
-
-	return rdb, nil
-}
-
 func registerCommon() error {
-
-	// provide db
-	if err := container.Provide(registerDb); err != nil {
-		return err
-	}
-
-	// provide redis
-	if err := container.Provide(registerRedis); err != nil {
-		return err
-	}
 
 	// provde echo
 	if err := container.Provide(func() *echo.Echo {

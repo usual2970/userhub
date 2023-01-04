@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	goRedis "github.com/go-redis/redis/v8"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/usual2970/gopkg/gorm"
+	"github.com/usual2970/gopkg/redis"
 	"github.com/usual2970/userhub/domain"
-	"gorm.io/gorm"
 )
 
 const (
@@ -25,19 +26,18 @@ return redis.call("hmget", KEYS[1], "id", "code", "state")
 `
 
 type CodeRepository struct {
-	db *gorm.DB
-	rc *redis.Client
 }
 
-func NewCodeRepository(db *gorm.DB, rc *redis.Client) domain.ICodeRepository {
-	return &CodeRepository{
-		db: db,
-		rc: rc,
-	}
+func NewCodeRepository() domain.ICodeRepository {
+	return &CodeRepository{}
 }
 
 func (cr *CodeRepository) Save(ctx context.Context, code *domain.Code) error {
-	if err := cr.db.Save(code).Error; err != nil {
+	db, err := gorm.GetDB()
+	if err != nil {
+		return err
+	}
+	if err := db.Save(code).Error; err != nil {
 		return err
 	}
 	cr.saveToCache(ctx, code)
@@ -45,7 +45,11 @@ func (cr *CodeRepository) Save(ctx context.Context, code *domain.Code) error {
 }
 
 func (cr *CodeRepository) Update(ctx context.Context, code *domain.Code) error {
-	if err := cr.db.Save(code).Error; err != nil {
+	db, err := gorm.GetDB()
+	if err != nil {
+		return err
+	}
+	if err := db.Save(code).Error; err != nil {
 		return err
 	}
 
@@ -66,15 +70,19 @@ func (cr *CodeRepository) GetByTelAndCode(ctx context.Context, tel, nationCode, 
 }
 
 func (cr *CodeRepository) GetByTel(ctx context.Context, tel, nationCode string, purpose int) (*domain.Code, error) {
+	rc, err := redis.GetRedis()
+	if err != nil {
+		return nil, err
+	}
 	key := getCodeKey(tel, nationCode, purpose)
 
-	str, err := cr.rc.Get(ctx, key).Result()
+	str, err := rc.Get(ctx, key).Result()
 
-	if err != nil && !errors.Is(err, redis.Nil) {
+	if err != nil && !errors.Is(err, goRedis.Nil) {
 		return nil, err
 	}
 
-	if err != nil && errors.Is(err, redis.Nil) {
+	if err != nil && errors.Is(err, goRedis.Nil) {
 		return nil, domain.ErrNotFound
 	}
 	rs := &domain.Code{}
@@ -82,10 +90,15 @@ func (cr *CodeRepository) GetByTel(ctx context.Context, tel, nationCode string, 
 	return rs, nil
 }
 
-func (cr *CodeRepository) saveToCache(ctx context.Context, code *domain.Code) {
+func (cr *CodeRepository) saveToCache(ctx context.Context, code *domain.Code) error {
+	rc, err := redis.GetRedis()
+	if err != nil {
+		return err
+	}
 	key := getCodeKey(code.Tel, code.NationCode, code.Purpose)
 	rs, _ := jsoniter.MarshalToString(code)
-	cr.rc.Set(ctx, key, rs, time.Duration(code.ExpiredAt-time.Now().Unix())*time.Second)
+	rc.Set(ctx, key, rs, time.Duration(code.ExpiredAt-time.Now().Unix())*time.Second)
+	return nil
 }
 
 func getCodeKey(tel, nationCode string, purpose int) string {
