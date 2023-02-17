@@ -89,6 +89,10 @@ func registerUser() error {
 		return err
 	}
 
+	if err := container.Provide(userRepo.NewGithubRepository); err != nil {
+		return err
+	}
+
 	if err := container.Provide(userUsecase.NewAuthUsecase); err != nil {
 		return err
 	}

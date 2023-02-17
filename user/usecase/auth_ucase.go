@@ -30,15 +30,17 @@ type AuthUsecase struct {
 	accountRepo domain.IAccountRepository
 	pTelRepo    domain.IPrivateTelInfoRepository
 	atRepo      domain.IAccessTokenRepository
+	githubRepo  domain.IGithubRepository
 }
 
 func NewAuthUsecase(codeRepo domain.ICodeRepository, accountRepo domain.IAccountRepository,
-	pTelRepo domain.IPrivateTelInfoRepository, atRepo domain.IAccessTokenRepository) domain.IAuthUsecase {
+	pTelRepo domain.IPrivateTelInfoRepository, atRepo domain.IAccessTokenRepository, githubRepo domain.IGithubRepository) domain.IAuthUsecase {
 	return &AuthUsecase{
 		codeRepo:    codeRepo,
 		accountRepo: accountRepo,
 		pTelRepo:    pTelRepo,
 		atRepo:      atRepo,
+		githubRepo:  githubRepo,
 	}
 }
 
@@ -46,6 +48,8 @@ func (a *AuthUsecase) getAuth(platformId int) (IAuth, error) {
 	switch platformId {
 	case constant.PlatformSmsCode:
 		return auth.NewCodeAuth(a.codeRepo, a.accountRepo, a.pTelRepo), nil
+	case constant.PlatformGithub:
+		return auth.NewGithubAuth(a.githubRepo, a.accountRepo), nil
 	default:
 		return nil, ErrAuthNotExist
 	}

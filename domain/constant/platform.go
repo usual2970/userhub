@@ -3,8 +3,7 @@ package constant
 const (
 	_ = iota
 	PlatformSmsCode
-	PlatformOneClick
-	PlatformWechatApp
+	PlatformGithub
 )
 
 const NotExistData = "-1"

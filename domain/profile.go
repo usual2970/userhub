@@ -59,6 +59,21 @@ func NewProfile(snsInfo *WechatUserInfoResp) *Profile {
 	}
 }
 
+func NewProfileWithGithub(snsInfo *GithubUserInfoResp) *Profile {
+	now := time.Now().Unix()
+	return &Profile{
+		Uri:        xid.New().String(),
+		Headimgurl: snsInfo.Headimgurl,
+		Nickname:   snsInfo.Nickname,
+		Sex:        snsInfo.Sex,
+		Province:   snsInfo.Province,
+		City:       snsInfo.City,
+		Country:    snsInfo.Country,
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	}
+}
+
 func (p *Profile) SetUserID(id int) {
 	p.UserId = id
 }
@@ -117,4 +132,32 @@ type IProviceUsecase interface {
 	SetWeight(ctx context.Context, weight int) error
 	// SetBirthday 设置生日
 	SetBirthday(ctx context.Context, birthday string) error
+}
+
+type GithubAccessTokenResp struct {
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	Scope       string `json:"scope"`
+}
+
+type GithubUserInfoResp struct {
+	Openid     string `json:"openid"`
+	Nickname   string `json:"nickname"`
+	Sex        int    `json:"sex"`
+	Province   string `json:"province"`
+	City       string `json:"city"`
+	Country    string `json:"country"`
+	Headimgurl string `json:"headimgurl"`
+	Privilege  string `json:"privilege"`
+	Unionid    string `json:"unionid"`
+}
+
+type GithubErrResp struct {
+	ErrCode int    `json:"errcode"`
+	ErrMsg  string `json:"errmsg"`
+}
+
+type IGithubRepository interface {
+	GetAccessToken(code string) (*GithubAccessTokenResp, error)
+	UserInfo(accessToken, openid string) (*GithubUserInfoResp, error)
 }

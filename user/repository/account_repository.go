@@ -122,7 +122,7 @@ func (ar *AccountRepository) Save(
 	return nil
 }
 
-func (ar *AccountRepository) SaveWechat(ctx context.Context, account *domain.Account, profile *domain.Profile, unionid *domain.Unionid, update func(account *domain.Account)) error {
+func (ar *AccountRepository) SaveSns(ctx context.Context, account *domain.Account, profile *domain.Profile, unionid *domain.Unionid, update func(account *domain.Account)) error {
 	db, dberr := gorm.GetDB()
 	if dberr != nil {
 		return dberr

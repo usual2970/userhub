@@ -42,7 +42,7 @@ type IAccountRepository interface {
 
 	Save(ctx context.Context, account *Account, privateTet *PrivateTelInfo, privateInfo *PrivateInfo, profile *Profile, update func(account *Account)) error
 
-	SaveWechat(ctx context.Context, account *Account, profile *Profile, unionid *Unionid, update func(account *Account)) error
+	SaveSns(ctx context.Context, account *Account, profile *Profile, unionid *Unionid, update func(account *Account)) error
 
 	DeleteFromCache(ctx context.Context, openid string) error
 }
