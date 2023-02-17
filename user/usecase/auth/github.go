@@ -71,6 +71,6 @@ func (ga *GithubAuth) Login(ctx context.Context, param map[string]string) (*doma
 	}); err != nil {
 		return nil, err
 	}
-
+	_ = ga.accountRepo.DeleteFromCache(ctx, openId)
 	return account, nil
 }
