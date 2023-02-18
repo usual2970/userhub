@@ -6,7 +6,7 @@ import (
 	"github.com/usual2970/gopkg/log"
 	"github.com/usual2970/userhub/domain"
 	"github.com/usual2970/userhub/internal/http"
-	"github.com/usual2970/userhub/internal/middleware"
+	"github.com/usual2970/userhub/user/delivery/http/middleware"
 )
 
 type AuthHandler struct {
