@@ -2,3 +2,4 @@ vendor
 engine
 app/__debug_bin
 .gitconfig
+config.json
